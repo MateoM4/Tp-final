@@ -2,14 +2,13 @@
 import React, { useState, useEffect, useRef, use } from 'react';
 import MenuDesplegable from './menuDesplegable';
 import MenuAsignar from './menuAsignar';
+import Mensajeria from './menuChats';
 import { GuardarEdificio, getBuildingsByUserId, builtEdificio, getUEbyUserId } from '../../services/userEdificios';
-import { getUserByCooki, getUser, getUserByHash, updateUser} from '@/services/users';
-import { getEdificios } from '../../services/edificios';
-import {recolectarRecursos, calcularMadera, calcularPiedra, calcularPan} from '@/services/recursos';
-/* import { useCookies } from 'next-client-cookies'; */
-import { useCookies } from 'react-cookie';
-import { verifyJWT } from '@/helpers/jwt';
-import { Await } from 'react-router-dom';
+import { getUserByCooki, getUser, getUserByHash, updateUser } from '@/services/users';
+import { recolectarRecursos, calcularMadera, calcularPiedra, calcularPan } from '@/services/recursos';
+import { getChats, getUsernameOther, getChatName } from '@/services/chats';
+import { getMensajes } from '@/services/mensajes';
+import { get } from 'http';
 
 
 type Building = {
@@ -34,7 +33,7 @@ const DynamicBuildings: React.FC = () => {
   const [pan, setPan] = useState(0);
   const [usuario, setUser] = useState('');
   const [usuarioId, setUserId] = useState('');
-  const[menuButton, setMenBut] = useState(false);
+  const [menuButton, setMenBut] = useState(false);
 
   // VARIABLES PARA LA RECOLECCION DE RECURSOS AUTOMATICA
   const [maderaPorSegundo, setMaderaPorSegundo] = useState(0);
@@ -44,112 +43,105 @@ const DynamicBuildings: React.FC = () => {
   const piedraRef = useRef(piedra);
   const panRef = useRef(pan);
 
-  const mouseMoveRef = useRef<(e: MouseEvent) => void>(() => {});
-  const mouseUpRef = useRef<() => void>(() => {});
-  
+  const mouseMoveRef = useRef<(e: MouseEvent) => void>(() => { });
+  const mouseUpRef = useRef<() => void>(() => { });
+
+  // para la mensajeria
+  const [userLoaded, setUserLoaded] = useState(false);
+  const [mostrarMensajeria, setMostrarMensajeria] = useState(false);
+  const [chats, setChats] = useState<any[]>([]);
+  const [chatnames, setChatNames] = useState<string[]>([]);
+
   //#region USEEFFECTS USUARIO
   //useffect para obetener el id de user 
   useEffect(() => {
-    async function fetchUserId() {
-      let resultado = await getUserByCooki();
-      let userId = resultado?.id;
-      console.log(userId);
-      setUserId(String(userId));
-    }
-    fetchUserId();
-    /*cargarUser();
-    getBuildingsByUserId(userId)
-      .then(fetchedBuildings => {
-        setBuildings(fetchedBuildings);
-      })
-      .catch(error => {
-        console.error("Error fetching buildings:", error);
-      });*/
-  }, [usuarioId]);
-
-
-  //#region USEEFFECTS RECURSOS
-  //useffect para cargar las cosas del user  (ESTE ESTA MAL CREO)
-  useEffect(() => {
-    cargarUser();
-    getBuildingsByUserId(usuarioId)
-      .then(fetchedBuildings => {
+    async function fetchData() {
+      try {
+        let resultado = await getUserByCooki();
+        let userId = resultado?.id;
+        if (!userId) {
+          console.error('No user ID found');
+          return;
+        }
+        console.log(userId);
+        setUserId(String(userId));
+        setUserLoaded(true);
+        cargarUser();
+        const [fetchedBuildings, chats] = await Promise.all([
+          getBuildingsByUserId(userId),
+          getChats(userId),
+        ]);
         setBuildings(fetchedBuildings);
         console.log("fetchedBuildings", fetchedBuildings);
-      })
-      .catch(error => {
-        console.error("Error fetching buildings:", error);
-      });
-  }, [usuarioId]);
-  
-  //useffect para recolectar recursos automaticamente
-  useEffect(() => {
-    const fetchMadera = async () => {
-      const result = await calcularMadera(usuarioId);
-      console.log("Madera por segundo: ", result);
-      setMaderaPorSegundo(result);
-    };
-    const fetchPiedra = async () => {
-      const result = await calcularPiedra(usuarioId);
-      console.log("Piedra por segundo: ", result);
-      setPiedraPorSegundo(result);
-      console.log("variable piedraPorSegundo", piedraPorSegundo)
-    };
-    const fetchPan = async () => {
-      const result = await calcularPan(usuarioId);
-      console.log("Pan por segundo: ", result);
-      setPanPorSegundo(result);
-      console.log("variable panPorSegunbdo", panPorSegundo);
-    };
-    
-    if(usuarioId.length > 5){
-      fetchMadera();
-      fetchPiedra();
-      fetchPan();
-    }    
+        setChats(chats);
+        console.log('Chats:', chats);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    }
+    fetchData();
   }, [usuarioId]);
 
-  // UseEffect para actualizar recursos cada 2 segundos
+  //useffect para recolectar recursos automaticamente CAMBIAR 50 POR 5
+  useEffect(() => {
+    const fetchResource = async (calculateFunc: (id: string) => Promise<number>, setFunc: (value: number) => void) => {
+      try {
+        const result = await calculateFunc(usuarioId);
+        setFunc(result);
+      } catch (error) {
+        console.error(`Error fetching resource: ${error}`);
+      }
+    };
+  
+    if (usuarioId) {
+      Promise.all([
+        fetchResource(calcularMadera, setMaderaPorSegundo),
+        fetchResource(calcularPiedra, setPiedraPorSegundo),
+        fetchResource(calcularPan, setPanPorSegundo),
+      ]);
+    }
+  }, [usuarioId]);
+  
   useEffect(() => {
     cargarUser();
     const timer = setInterval(() => {
-      console.log('Setting up interval');
-      setMadera(madera => {
-        const newMadera = madera + maderaPorSegundo;
-        maderaRef.current = newMadera;
-        return newMadera;
-      });
-      setPiedra(piedra => {
-        const newPiedra = piedra + piedraPorSegundo;
-        piedraRef.current = newPiedra;
-        return newPiedra;
-      });
-      setPan(pan => {
-        const newPan = pan + panPorSegundo;
-        panRef.current = newPan;
-        return newPan;
-      });
+      setMadera(madera => madera + maderaPorSegundo);
+      setPiedra(piedra => piedra + piedraPorSegundo);
+      setPan(pan => pan + panPorSegundo);
     }, 2000);
   
     return () => clearInterval(timer);
   }, [maderaPorSegundo, piedraPorSegundo, panPorSegundo]);
   
-  //actualizar en bdd cada 10 segundos
   useEffect(() => {
-    const timer = setInterval(() => {
-      const update = async () => {
+    const timer = setInterval(async () => {
+      try {
         await updateUser(usuarioId, { madera: maderaRef.current, piedra: piedraRef.current, pan: panRef.current });
-      };
-      update();
-      console.log('recursos actualizados');
-    }, 10000);
+        console.log('recursos actualizados');
+      } catch (error) {
+        console.error(`Error updating user: ${error}`);
+      }
+    }, 10000000);
   
     return () => clearInterval(timer);
   }, [usuarioId]);
 
-//region METODOS VARIOS
+  //conseguir todos los nombres de los chats
+  useEffect(() => {
+    if (chats.length > 0 && usuarioId) {
+      console.log('Fetching chat names...')
+      Promise.all(chats.map(chat => getChatName(chat, usuarioId)))
+        .then(chatnames => {
+          setChatNames(chatnames);
+          console.log('Chat names:', chatnames);
+        })
+        .catch(error => console.error('Error fetching chat names:', error));
+    }
+  }, [chats, usuarioId]);
+
+  //region METODOS VARIOS
   const handleBuildClick = async (id: string, x: number, y: number, buildingType: string, ancho: number, largo: number, nivel: number) => {
-    const newBuilding = { id, x, y, type: buildingType, ancho, largo, nivel, costo: 0};
+    const newBuilding = { id, x, y, type: buildingType, ancho, largo, nivel, costo: 0 };
     const collisionIndex = getCollidedBuildingIndex(-1, x, y, ancho, largo);
 
     if (collisionIndex === -1) {
@@ -170,7 +162,7 @@ const DynamicBuildings: React.FC = () => {
   const handleMenuClick = () => {
     setMenuOpen(!menuOpen);
   };
-  
+
 
   const handleMouseDown = (index: number, event: React.MouseEvent<HTMLDivElement>) => {
     setDraggedBuildingIndex(index);
@@ -203,7 +195,7 @@ const DynamicBuildings: React.FC = () => {
       const buildingHeight = updatedBuildings[index].largo; // Alto de cada edificio
 
       // Limitar las coordenadas x e y dentro del área de construcción
-      const clampedX = Math.min(Math.max(newX, 0)+20, maxWidth - buildingWidth);
+      const clampedX = Math.min(Math.max(newX, 0) + 20, maxWidth - buildingWidth);
       const clampedY = Math.min(Math.max(newY, 0), maxHeight - buildingHeight);
 
       // Ajustar la posición si colisiona con otros edificios
@@ -247,7 +239,7 @@ const DynamicBuildings: React.FC = () => {
   };
 
 
-  const guardarEdificioEnBD = (id: string, posX: number, posY: number, nivel : number) => {
+  const guardarEdificioEnBD = (id: string, posX: number, posY: number, nivel: number) => {
     GuardarEdificio(id, posX, posY, nivel);
   };
 
@@ -257,9 +249,9 @@ const DynamicBuildings: React.FC = () => {
     });
   };
   const recolectarRecursosUser = async () => {
-/*     "use server" */
+    /*     "use server" */
     const user = await getUserByCooki()
-    if(user != null){
+    if (user != null) {
       await recolectarRecursos(user.id);
       setMadera(user.madera);
       setPiedra(user.piedra);
@@ -268,12 +260,12 @@ const DynamicBuildings: React.FC = () => {
   }
   const cargarUser = async () => {
     const user = await getUserByCooki()
-/* const user = await getUser(usoCooki().then(x =>x?.id)) */
-    if(user != null){
+    /* const user = await getUser(usoCooki().then(x =>x?.id)) */
+    if (user != null) {
       setMadera(user.madera);
       setPiedra(user.piedra);
       setPan(user.pan);
-      setUser(String (user.username));
+      setUser(String(user.username));
     }
   }
   const generarUnidades = () => {
@@ -289,20 +281,28 @@ const DynamicBuildings: React.FC = () => {
       console.log('Clic derecho');
     }
   }
-        // Ejemplo de uso en un elemento HTML (por ejemplo, un botón)
-        const miBoton = document.getElementById('miBoton');
-        miBoton?.addEventListener('click', handleClick);
+  // Ejemplo de uso en un elemento HTML (por ejemplo, un botón)
+  const miBoton = document.getElementById('miBoton');
+  miBoton?.addEventListener('click', handleClick);
 
-  
-/*
-  const getUE = async () => {
-    const user = await getUserByCooki()
-    const h= await getUEbyUserId(user.id)
-    return h
-  }*/
-  
+  function handleMensajeria() {
+    setMostrarMensajeria(!mostrarMensajeria);
+  }
+
+  function chatName(chatId: string) {
+    const name = getUsernameOther(chatId, usuarioId);
+    return name;
+
+  }
+  /*
+    const getUE = async () => {
+      const user = await getUserByCooki()
+      const h= await getUEbyUserId(user.id)
+      return h
+    }*/
+
   // #region RETURN 
-  
+
   return (
     <div className="hola flex flex-col items-center justify-center w-screen h-screen bg-gray-900">
       <div className="absolute top-0 left-0 p-4 bg-red-500 text-blue font-bold py-2 px-4 rounded">
@@ -311,9 +311,18 @@ const DynamicBuildings: React.FC = () => {
         <h3>Piedra: {piedra} || PS: {piedraPorSegundo}  </h3>
         <h3>Pan:    {pan}    || PS: {panPorSegundo}     </h3>
       </div>
-      <div className='absolute top-0 left-100 p-4 bg-red-500 hover:bg-blue-700 text-blue font-bold py-2 px-4 rounded'>
-        <button onClick={() => generarUnidades()}>Asignar Unidades</button>
+      <div className='absolute top-0 left-100 p-4 bg-red-500  text-blue font-bold py-2 px-4 rounded  flex flex-col justify-around'>
+        <button onClick={() => generarUnidades()} className='hover:bg-blue-700'>Asignar Unidades</button>
+        <button onClick={() => handleMensajeria()} className='hover:bg-blue-700'>Mensajes</button>
       </div>
+      <Mensajeria
+        mostrarMensajeria={mostrarMensajeria}
+        userLoaded={userLoaded}
+        chats={chats}
+        chatnames={chatnames}
+        handleMensajeria={handleMensajeria}
+        getMensajes={getMensajes}
+      />
       <div style={{ width: '1200px', height: '700px' }} className="bg-green-500 flex items-center justify-center relative">
         {buildings.map((building, index) => (
           <div
@@ -330,13 +339,13 @@ const DynamicBuildings: React.FC = () => {
               cursor: 'pointer',
             }}
             onMouseDown={(e) => handleMouseDown(index, e)}
-            
+
           >
             <div>{building.type} - X: {building.x}, Y: {building.y}</div>
-            <button className='bg-red-500 hover:bg-red-700 text-white font-bold  rounded"' 
-            onClick={() => {setMenBut(!menuButton); console.log(menuButton)}}>Asignar</button>
-              {menuButton ? <MenuAsignar /> : null}
-              {/* <div id={building.id} className="dropdowm relative" style={{display:"flex", transform: "rotateX(-32deg) rotateZ(50deg)"}}>                
+            <button className='bg-red-500 hover:bg-red-700 text-white font-bold  rounded"'
+              onClick={() => { setMenBut(!menuButton); console.log(menuButton) }}>Asignar</button>
+            {menuButton ? <MenuAsignar /> : null}
+            {/* <div id={building.id} className="dropdowm relative" style={{display:"flex", transform: "rotateX(-32deg) rotateZ(50deg)"}}>                
                 <form className=" flex flex-col"  action={updateEdifUser}>                       
                     <input type="number" name="unidadesEdif" placeholder="Nº-trabajadores del edificio" />                    
                     <button type="submit" className=" mt-5 bg-blue-500 hover:bg-blue-700 " >Agregar</button>
