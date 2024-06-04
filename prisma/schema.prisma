@@ -42,6 +42,9 @@ model Users{
   pan Int
   unidadesDeTrabajo Int
   userEdificios UserEdificios[]
+  mensajes Mensajes[]
+  chatsAsUser1 Chats[] @relation("User1Chats")
+  chatsAsUser2 Chats[] @relation("User2Chats")
 }
 model UserEdificios{
     id String @id @default(auto()) @map("_id") @db.ObjectId
@@ -55,5 +58,29 @@ model UserEdificios{
   trabajadores Int?
 
   edificio Edificios @relation(fields: [edificioId], references: [id])
+}
+
+model Mensajes{
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  chatId String @db.ObjectId
+  chat Chats @relation(fields: [chatId], references: [id])
+  emisor String @db.ObjectId
+  user Users @relation(fields: [emisor], references: [id])
+  madera Int
+  piedra Int
+  pan Int
+  texto String
+  fecha DateTime
+}
+
+model Chats {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  user1 String @db.ObjectId
+  user2 String @db.ObjectId
+  username1 String
+  username2 String
+  user1ref Users @relation("User1Chats", fields: [user1], references: [id])
+  user2ref Users @relation("User2Chats", fields: [user2], references: [id])
+  mensajes Mensajes[]
 }
 
