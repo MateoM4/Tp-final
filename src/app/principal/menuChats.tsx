@@ -63,16 +63,16 @@ const Mensajeria: React.FC<MensajeriaProps> = ({ userId, mostrarMensajeria, user
       <div className="relative w-1/2 h-1/2 bg-white rounded-lg">
         <button className="absolute top-2 right-2 text-lg font-bold" onClick={handleMensajeria}>X</button>
         <h1 className="text-1xl font-bold text-center">Mensajeria</h1>
-        <form onSubmit={handleCreateChat} className="mx-auto pb-4">
+        <form onSubmit={handleCreateChat} className="flex flex-col items-center mx-auto pb-4">
           <input type="text" value={username} onChange={handleUsernameChange} placeholder="Username" required className="text-center" />
-          <button type="submit">Create chat</button>
+          <button type="submit" className='bg-gray-200'>Create chat</button>
         </form>
         <div>
           <ul className='flex flex-col items-center'>
             {chats.map((chat: any, index: number) => (
               <li key={chat.id} className='flex flex-row justify-around items-center space-x-4'>
                 <h2> ({chat.id}) Chat: {chatnames[index]}</h2>
-                <button onClick={() => handleRedirect(chat.id, userId)} className='bg-gray-500'>abrir </button>
+                <button onClick={() => handleRedirect(chat.id, userId)} className='bg-gray-200'>abrir </button>
               </li>
             ))}
           </ul>
