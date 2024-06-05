@@ -3,7 +3,10 @@ import React from "react"
 import { useEffect, useState } from "react";
 import { createMensaje, getMensajes } from "@/services/mensajes";
 import { getUser } from "@/services/users";
+
 import { getChatNameById } from "@/services/chats";
+
+
 import { get } from "http";
 
 const Chats: React.FC = () => {
@@ -13,6 +16,7 @@ const Chats: React.FC = () => {
     const [username, setUsername] = useState<string>("")
     const [userId, setUserId] = useState<string>("")
     const [usernameOther, setUsernameOther] = useState<string>("")
+
     
 
     useEffect(() => {
@@ -22,8 +26,8 @@ const Chats: React.FC = () => {
         //conseguir chatId
         if (chatLocalStorage) {
             setChatId(chatLocalStorage as string)
-            
 
+            console.log("chatId", chatLocalStorage)
         }
 
         //conseguir userId
@@ -44,9 +48,11 @@ const Chats: React.FC = () => {
             })
         }
 
+
         if(chatId !== "" && userId !== ""){
             getChatNameById(chatId, userId).then(setUsernameOther)
         }
+
     }, [chatId, userId])
 
     //refrescar por si me mandaron mensajes*/
@@ -92,7 +98,11 @@ const Chats: React.FC = () => {
         <main>
             <div className=" flex flex-col justify-center items-center mt-16 p-8  bg-gray-400">
                 <div className=" justify-between bg-white w-8/12 flex   p-5 border m-5">
+
                     <h1>Chat: {usernameOther}</h1>
+
+                    <h1>Chat: {username}</h1>
+
                 </div>
 
                 <div className=" bg-white p-10 m-2 w-8/12 flex-col flex justify-between">

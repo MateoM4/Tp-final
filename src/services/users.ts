@@ -203,6 +203,7 @@ export async function getUserByCooki() {
 }
 
 
+
 //-----------------------------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------------------------
@@ -315,5 +316,22 @@ export async function updateUserBuildings(
     throw error;
   }
 };
+
+
+export async function getChatIdByCooki(){
+  const chatId = cookies().get('chatId')?.value
+  return chatId
+}
+
+export async function getOtherUsers(userId: string){
+  const users = await prisma.users.findMany({
+    where: {
+      NOT: {
+        id: userId
+      }
+    }
+  })
+  return users
+}
 
 

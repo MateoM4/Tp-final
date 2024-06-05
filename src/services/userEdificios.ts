@@ -255,6 +255,9 @@ export const updateUEunidades = async (Id: string, unidades: any, panXunidad: an
 
     if (panUser < 0) return error("Pan insuficiente para alimentar a las unidades")
 
+    if(panUser < 0) return error("Pan insuficiente para alimentar a las unidades")
+
+
     let unidadesEdif = unidades + (ue?.trabajadores)
 
     //actualizo el documento userEdificio
@@ -277,6 +280,8 @@ export const updateUEunidades = async (Id: string, unidades: any, panXunidad: an
         }
     })
     let edif = await getEdificioById(String(ue?.edificioId)).then(x => x)
+
+    let edif = await getEdificioById(String(ue?.edificioId)).then(x=>x)
     console.log("------------------Después de actualizar-------------------------------")
     console.log(`Edificio: ${edif?.name}- trabajadores: ${ue?.trabajadores} `)
     console.log(`User: ${usuario?.id}- trabajadores: ${usuario?.unidadesDeTrabajo} `)
