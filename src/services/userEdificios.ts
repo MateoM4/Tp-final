@@ -279,8 +279,6 @@ export const updateUEunidades = async (Id: string, unidades: any, panXunidad: an
             pan: panUser
         }
     })
-    let edif = await getEdificioById(String(ue?.edificioId)).then(x => x)
-
     let edif = await getEdificioById(String(ue?.edificioId)).then(x=>x)
     console.log("------------------Después de actualizar-------------------------------")
     console.log(`Edificio: ${edif?.name}- trabajadores: ${ue?.trabajadores} `)
