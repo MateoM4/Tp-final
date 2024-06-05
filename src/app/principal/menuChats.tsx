@@ -72,7 +72,7 @@ const Mensajeria: React.FC<MensajeriaProps> = ({ userId, mostrarMensajeria, user
             {chats.map((chat: any, index: number) => (
               <li key={chat.id} className='flex flex-row justify-around items-center space-x-4'>
                 <h2> ({chat.id}) Chat: {chatnames[index]}</h2>
-                <button onClick={() => handleRedirect(chat.id, userId)} className='bg-gray-200'>abrir </button>
+                <button onClick={() => handleRedirect(chat.id, userId)} className='bg-gray-300'>abrir </button>
               </li>
             ))}
           </ul>
