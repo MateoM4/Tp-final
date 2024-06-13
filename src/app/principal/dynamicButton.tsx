@@ -13,6 +13,8 @@ import { getEdificioById, getImagenEdificio } from '@/services/edificios';
 import ButtonUser from './buttonUser';
 import Image from 'next/image';
 import ImageFloor from '../../../public/Images/FloorImage.jpeg';
+import PantallaCarga from './pantallaCarga';
+import { truncate, truncateSync } from 'fs';
 
 
 type Building = {
@@ -75,6 +77,14 @@ const DynamicBuildings: React.FC = () => {
   //para las imagenes de los edificios
   const [images, setImages] = useState<{ [key: string]: string }>({});
 
+  //para la pantalla de carga
+  const [cargandoPrincipal, setCargandoPrincipal] = useState(true)
+  const [cargandoChats, setCargandoChats] = useState(true)
+  const [cargandoImagenes, setCargandoImagenes] = useState(false)
+  const [cantidadEdificios, setCantidadEdificios] = useState(0)
+  const [imagenesCargadas, setImagenesCargadas] = useState(0)
+
+
   //----------------------------------------------------------
   //region VERIFICAR COOKIE
 
@@ -122,8 +132,13 @@ const DynamicBuildings: React.FC = () => {
         console.log('Chats:', chats);
         //cargar imagenes
         mapearImagenes(fetchedBuildings);
+        //para la pantalla de carga
+        setCantidadEdificios(fetchedBuildings.length)
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
+        //fetch principal terminado
+        setCargandoPrincipal(false)
       }
     }
     fetchData();
@@ -142,7 +157,11 @@ const DynamicBuildings: React.FC = () => {
           setChatNames(chatnames);
           console.log('Chat names:', chatnames);
         })
-        .catch(error => console.error('Error fetching chat names:', error));
+        .catch(error => console.error('Error fetching chat names:', error))
+        .finally(() => {
+          // chats cargados
+          setCargandoChats(false)
+        });
     }
   }, [chats, userId]);
 
@@ -410,6 +429,14 @@ const DynamicBuildings: React.FC = () => {
     setImages(imagenes);
     console.log('Imagenes:', imagenes);
   }
+
+  const handleCargaImagenes =  () => {
+    setImagenesCargadas(imagenesCargadas + 1)
+    if (imagenesCargadas == cantidadEdificios) {
+      setCargandoImagenes(false)
+    }
+    console.log("imagenes cargadas", imagenesCargadas, "de", cantidadEdificios) 
+  }
   //region update viejo
   /*  const updateBuildingCount = async (id: string, costos: number) => {  
     let countsMax = 0;
@@ -535,6 +562,8 @@ const DynamicBuildings: React.FC = () => {
   //region hasta aca seba-------------------------
   return (
     <div className="hola flex flex-col items-center justify-center w-screen h-screen bg-gray-900">
+      <PantallaCarga cargandoPrincipal={cargandoPrincipal} cargandoChats={cargandoChats} cargandoImagenes={cargandoImagenes}>  
+      </PantallaCarga>
       <div className="absolute top-0 left-0 p-4 bg-red-500 text-blue font-bold py-2 px-4 rounded">
         <Recursos
           usuario={usuario}
@@ -587,7 +616,9 @@ const DynamicBuildings: React.FC = () => {
               objectFit="cover"
               className="absolute inset-0 w-full h-full"
               style={{ pointerEvents: 'none' }} // para que el click no interaccione con la imagen
+              onLoadingComplete={() => handleCargaImagenes()} // para que por cada imagen cargada se actualice el contador
             />
+              
 
 
             {/*<div>{building.type} - X: {building.x}, Y: {building.y}</div>*/}
