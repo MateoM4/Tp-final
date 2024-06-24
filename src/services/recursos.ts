@@ -105,7 +105,7 @@ export async function calcularMadera(userId: string, userNivel: number) {
         //console.log("madera por segundo una maderera: ", Math.ceil(Number(maderera.trabajadores || 0) / 5) * Number(maderera.nivel || 0), "cant. trabajadores: ", maderera.trabajadores, "nivel: ", maderera.nivel)
     }
    // console.log("madera por segundo TOTAL: ", maderaPorSegundo)
-    return maderaPorSegundo
+    return maderaPorSegundo * 10
 }
 
 export async function calcularPiedra(userId: string, userNivel: number) {
@@ -122,7 +122,7 @@ export async function calcularPiedra(userId: string, userNivel: number) {
         piedraPorSegundo += Math.ceil(Number(cantera.trabajadores || 0) / 5) * Number(cantera.nivel || 0)
     }
     //console.log("piedra por segundo TOTAL: ", piedraPorSegundo)
-    return piedraPorSegundo
+    return piedraPorSegundo * 10
 }
 
 export async function calcularPan(userId: string, userNivel: number) {
@@ -138,5 +138,5 @@ export async function calcularPan(userId: string, userNivel: number) {
         panPorSegundo += Math.ceil(Number(panaderia.trabajadores || 0) / 5) * Number(panaderia.nivel || 0)
     }
    // console.log("pan por segundo TOTAL: ", panPorSegundo)
-    return panPorSegundo
+    return panPorSegundo * 10
 }
