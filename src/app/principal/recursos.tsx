@@ -56,7 +56,7 @@ const Recursos: React.FC<RecursosProps> = ({ usuario, userId,madera, setMadera, 
             setMadera(madera => madera + maderaPorSegundo);
             setPiedra(piedra => piedra + piedraPorSegundo);
             setPan(pan => pan + panPorSegundo);
-        }, 5000);
+        }, 6000);
 
         return () => clearInterval(timer);
     }, [maderaPorSegundo, piedraPorSegundo, panPorSegundo]);
@@ -92,7 +92,7 @@ const Recursos: React.FC<RecursosProps> = ({ usuario, userId,madera, setMadera, 
                 console.error(`Error updating user: ${error}`);
             }
            }
-        }, 5000);
+        }, 6000);
 
         return () => clearInterval(timer);
     }, [userId]);

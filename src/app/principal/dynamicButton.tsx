@@ -172,62 +172,57 @@ const DynamicBuildings: React.FC = () => {
   //#region METODOS HANDLE
   const handleBuildClick = async (id_edi: string, x: number, y: number, buildingType: string, ancho: number, largo: number, costos: number, cantidad: number, recurso: number) => {
     // para asegurar que no interefiera la generación de recursos con la construcción
-  
-      // para asegurar que no interfiera la generación de recursos con la construcción
-      setConstruyendo(true);
-  
-      const existingBuilding = buildings.find(building => building.x === x && building.y === y && building.id === id_edi);
-  
-      if (!existingBuilding) {
+    setConstruyendo(true);
+    const existingBuilding = false //buildings.find(building => building.x === x && building.y === y && building.id === id);
+
+    if (!existingBuilding) {
+
+
+      // Actualizar el estado del usuario
+      const construir = await updateBuildingCount(userId, cantidad, costos, id_edi, recurso); // devuelve 1 si se puede construir, 0 si no
+      if (typeof construir === "string") {
+        setError(construir)
+        return setBoxError(true)
+      }
+      
+      //window.location.reload();
+      // Llamar a la función para guardar el edificio en la base de datos
+
+      if (construir === 1) {
+        buildings.find(building => building.x === x && building.y === y && building.id === id_edi);
+
         try {
-          // Actualizar el estado del usuario
-          const construir = await updateBuildingCount(userId, cantidad, costos, id_edi, recurso); // devuelve 1 si se puede construir, 0 si no
-  
-          if (typeof construir === "string") {
-            setError(construir);
-            setBoxError(true);
-            return;
-          }
-  
-          if (construir === 1) {
-            try {
-              // Evita recargar la página, en su lugar actualiza el estado
-              const edif = await builtEdificio(userId, id_edi, x, y, 1);
-              console.log('Edificio guardado exitosamente en la base de datos.');
-  
-              if (edif) {
-                const newEdif = await getOneBuildingsByUserId(userId, edif.edificio.id);
-                console.log('Edificio:', newEdif);
-  
-                if (newEdif) {
-                  setBuildings(prevBuildings => [...prevBuildings, newEdif]);
-                  setMenuOpen(false);
-  
-                  // Actualizar los recursos del usuario
-                  const user = await getUserByCooki();
-                  if (user) {
-                    await recolectarRecursos(user.id); // Recolecta recursos antes de actualizar el estado
-                    setMadera(user.madera);
-                    setPiedra(user.piedra);
-                    setPan(user.pan);
-                  }
-                }
+          // Evita recargar la página, en su lugar actualiza el estado
+          const edif = await builtEdificio(userId, id_edi, x, y, 1);
+          console.log('Edificio guardado exitosamente en la base de datos.');
+          if (edif) {
+            const newEdif = await getOneBuildingsByUserId(userId, (edif.edificio.id));
+            console.log('Edificio:', newEdif);
+            if (newEdif != null && newEdif !== undefined) {
+              setBuildings(prevBuildings => [...prevBuildings, newEdif]);
+              setMenuOpen(false)
+
+              //restar recursos de la construcción  
+              const userActualizado = await getUser(userId)
+              if(userActualizado != null){
+                setMadera(userActualizado.madera);
+                setPiedra(userActualizado.piedra);
+                setPan(userActualizado.pan);
               }
-            } catch (error) {
-              console.error('Error al guardar el edificio en la base de datos:', error);
+            } else {
+              console.error('No se encontró el edificio con el ID de usuario dado');
             }
           }
+
         } catch (error) {
-          console.error('Error al actualizar el estado del usuario:', error);
-          setError('Error al actualizar el estado del usuario');
-          setBoxError(true);
+          console.error('Error al guardar el edificio en la base de datos:', error);
         }
-      } else {
-        console.log('Ya hay un edificio del mismo tipo en estas coordenadas');
       }
-  
-      setConstruyendo(false);
-    };
+    } else {
+      console.log('Ya hay un edificio del mismo tipo en estas coordenadas');
+    }
+    setConstruyendo(false);
+  };
   const handleMenuClick = () => {
     setMenuOpen(!menuOpen);
   };
